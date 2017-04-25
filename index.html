@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Steganography</title>
+
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+  <!-- Static navbar -->
+    <nav class="navbar navbar-default navbar-static-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Project name</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Code</a></li>
+            <li><a href="images.html">Images</a></li>
+            
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+    <div class="container">
+
+<h2>Matlab Encryption Code</h2>
+    <pre>
+FID = fopen('Text.txt', 'rb');    %opening text file
+Str = fread(FID, [1, inf], 'char'); %reading text file
+fclose(FID);        %closing the file
+Str=uint16(Str);    %converting to 16 bit numbers for proper calculation
+ 
+x=imread('original.jpg');   %reading the image file
+x=uint16(x);                %conversion to 16 bit
+[x_row,x_col]=size(x);
+ 
+c=numel(Str);   %counting characters
+a=1;
+ 
+%encrypting loop
+for i=1:x_row
+    for j=1:x_col
+        if(a<=c)
+            
+            if(x(i,j)+Str(a)>255)
+                temp=x(i,j)+Str(a)-256;
+            else
+                temp=x(i,j)+Str(a);
+            end
+            z(i,j)=uint8(temp);
+        else
+            z(i,j)=uint8(x(i,j));
+        end
+        a=a+1;
+    end
+end
+ 
+imwrite(z,'encrypted.jpg');     %writing the encrypted data as pixels in image
+    </pre>
+
+    <h2>Matlab Decryption Code</h2>
+    <pre>
+x=imread('encrypted.jpg');  %reading encrypted image
+y=imread('original.jpg');   %reading non-encrypted image
+
+x=uint16(x);    %16 bit conversion
+y=uint16(y);    %16 bit conversion
+
+[x_row, x_col]=size(x);
+
+b=0;k=1;
+%decrypting loop
+for i=1:x_row
+    for j=1:x_col
+        if(x(i,j)>=y(i,j))
+            a=x(i,j)-y(i,j);
+        else
+            a=256+x(i,j)-y(i,j);
+        end
+        
+        if(a~=0)
+            z(k)=uint8(a);
+            k=k+1;
+        else
+            b=1;
+            break;
+        end
+    end
+    if(b==1)
+        break;
+    end
+end
+
+fid=fopen('decrypted.txt','w'); %creating text file to write decrypted data 
+for i=1:k-1
+    fprintf(fid,'%c',z(i)); %writing to file
+end
+    </pre>
+
+    <h2>Python Steganography Code</h2>
+    <pre>
+######################################################################################
+#### The following code uses concept of stegography and hides text entered in the ####
+#### specified image by replacing LSB of each pixel.                              ####
+######################################################################################
+
+from PIL import Image       # for image related operations
+import numpy                # for array handling
+import sys                  # to get size of text
+
+# get image array
+def getArray(image_object):
+    # get list of pixels
+    pixel_values = list(image_object.getdata())
+    # get image array
+    image_arr = numpy.array(pixel_values)
+    # reshape the array in the dimensions of image
+    image_arr = image_arr.reshape(image_object.size[0], image_object.size[1])
+    return image_arr
+
+# hide text into image
+def hide(img_array, txt):
+    row = img_array.shape[0]    # get row of the image row
+    col = img_array.shape[1]    # get column of the image row
+    txt_bin = []                # this stores list of lists of text converted into binary
+    text1 = []                  # list to store binary array of the text
+    new_image_array = []        # list to store changed value pixels of new image
+    count = 0                   # counts number of iterations
+
+    # convert text into binary
+    for i in txt:
+        txt_bin.append(list(bin(ord(i))[2:]))   # store text converted into binary in a list
+
+    # convert list of lists into a list
+    for i in txt_bin:
+        for j in i:
+            text1.append(j)
+
+    # hide begins :)
+    for r in range(row):
+        for t in range(col):
+            # if number of iterations are less than the length of text1
+            if count <= len(text1)-1:
+                # convert pixel value into binary and make a list of it
+                a = list(bin(img_array[r,t]))
+                # replace LSB with text bit
+                a[len(a)-1] = text1[t]
+                a = "".join(a)
+                # store updated value in array
+                new_image_array.append(int(a,2))
+                count += 1
+            else:
+                # store the unchanged value
+                new_image_array.append(img_array[r,t])
+    # converting list into array
+    new_image_array = numpy.array(new_image_array)
+    # reshaping array
+    new_image_array = new_image_array.reshape(img_array.shape[0], img_array.shape[1])
+    return new_image_array, len(text1)
+
+# extract text from image
+def unhide(img_array, txt):
+    row = img_array.shape[0]    # get row of the image row
+    col = img_array.shape[1]    # get column of the image row
+    ans = []                    # this stores intermediate answer
+    count = 0                   # counts iterations till len(txt)
+
+    # extraction begins :)
+    for r in range(row):
+        for t in range(col):
+            # if number of iterations are less than the length of txt
+            if count <= txt-1:
+                # get pixel value and convert into binary
+                a = list(bin(img_array[r,t]))
+                # store LSB in a list
+                ans.append(a[len(a)-1])
+                count += 1
+    b = ""      # empty string
+    c = []      # list to store converted data
+    # iterate through the ans list and convert binary to char
+    for i in range(len(ans)):
+            b += ans[i]
+            # if length of b == 7 because we are storing 7 bits (as we are excluding "0b") in hide()
+            # then break the string at 7
+            if len(b) == 7:
+                b = "0b"+b
+                # store the converted binary to string in list c
+                c.append(chr(int(b,2)))
+                b=""
+
+    return c
+
+# get text from user
+text = "SteganographyIsEasy"
+
+# get image location from user
+image_loc = "Lena.tiff"
+
+# load the image and then convert it into greyscale
+image_original = Image.open(image_loc).convert("L")
+
+# display the original image
+image_original.show()
+
+# get the array of the image
+image_array = getArray(image_original)
+
+# amount of data that can be hidden
+# here we divide by 7 because we are considering only 7 bits by excluding "0b"
+h = ((image_array.shape[0] * image_array.shape[1])/7)
+print ("Amount of data that can be hidden is:" , h, "B")
+
+# get size of image in B
+txt_size = sys.getsizeof(text)
+
+# if data can be hidden
+if txt_size <= h:
+    # hide data and get image array and hidden text
+    im_new,text_size = hide(image_array, text)
+
+    # get updated image
+    im = Image.fromarray(numpy.uint8(im_new))
+    # get updated image
+    im.show()
+
+    # unhide data
+    extracted_text = unhide(getArray(im),text_size)
+
+    # print hidden data
+    t = "".join(extracted_text)
+    print ("The extracted text is:", t)
+
+# if data cannot be hidden
+else:
+    print ("Text size is large than amount of data that can be hidden in the image.")
+
+    </pre>
+
+<h2>Matlab Embedding Code</h2>
+    <pre>
+% Embedding code
+
+    c = imread('Lena.tiff');
+    message = 'Stegenography is very easy'
+    message = strtrim(message);
+    m = length(message) * 8;
+    AsciiCode = uint8(message); 
+    binaryString = transpose(dec2bin(AsciiCode,8));
+    binaryString = binaryString(:);
+    N = length(binaryString);
+    b = zeros(N,1); %b is a vector of bits
+    for k = 1:N
+        if(binaryString(k) == '1')
+            b(k) = 1;
+        else
+            b(k) = 0;
+        end
+    end
+    s = c;
+    height = size(c,1);
+    width = size(c,2);
+    k = 1;
+    for i = 1 : height
+        for j = 1 : width
+             LSB = mod(double(c(i,j)), 2);
+            if (k>m || LSB == b(k))
+                s(i,j) = c(i,j);
+            else
+                if(LSB == 1)
+                    s(i,j) = c(i,j) - 1;
+                else
+                    s(i,j) = c(i,j) + 1;
+                end
+            k = k + 1;
+        end
+        end
+    end
+     imwrite(s, 'outputimg.tiff');
+    </pre>
+
+    <h2>Matlab Retrieving Code</h2>
+    <pre>
+% Retriever coding
+    s = imread('outputimg.tiff');
+    height = size(s,1);
+    width = size(s,2);
+    %For this example the max size is 100 bytes, or 800 bits, (bytes * = bits
+    m = 800;
+    k = 1;
+    for i = 1 : height
+        for j = 1 : width
+            if (k <= m)
+                b(k) = mod(double(s(i,j)),2);
+                k = k + 1;
+            end
+        end
+    end
+    binaryVector = b;
+    binValues = [ 128 64 32 16 8 4 2 1 ];
+    binaryVector = binaryVector(:);
+    if mod(length(binaryVector),8) ~= 0
+        error('Length of binary vector must be a multiple of 8.');
+    end
+    binMatrix = reshape(binaryVector,8,100);
+    display(binMatrix);
+    textString = char(binValues*binMatrix);    
+    disp(textString);
+    </pre>
+    </div>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
+  </body>
+</html>
